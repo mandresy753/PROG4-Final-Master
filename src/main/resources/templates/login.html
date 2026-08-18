@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Connexion - HEI</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+  <header class="app-header">
+    <h1>HEI - Gestion des diplômés</h1>
+  </header>
+
+  <main>
+    <div class="card" style="max-width: 380px; margin: 0 auto;">
+      <h2>Connexion</h2>
+
+      <p class="error-message" th:if="${error}" th:text="${error}">Erreur</p>
+
+      <form class="login-form" method="post" th:action="@{/login}">
+        <div>
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required autofocus>
+        </div>
+        <div>
+          <label for="password">Mot de passe</label>
+          <input type="password" id="password" name="password" required>
+        </div>
+        <button class="btn" type="submit">Se connecter</button>
+      </form>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Promotions - HEI</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+  <header class="app-header">
+    <h1>HEI - Gestion des diplômés</h1>
+    <a th:href="@{/logout}">Se déconnecter</a>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>Promotions</h2>
+
+      <p class="empty-state" th:if="${#lists.isEmpty(promotions)}">
+        Aucune promotion n'a encore de diplômés.
+      </p>
+
+      <table th:unless="${#lists.isEmpty(promotions)}">
+        <thead>
+          <tr>
+            <th>Promotion</th>
+            <th>Liste des diplômés</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="promotion : ${promotions}">
+            <td th:text="${promotion}">2021-2022</td>
+            <td>
+              <a class="btn" th:href="@{/promotions/{promotion}/export(promotion=${promotion})}">
+                Télécharger (xlsx)
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>
