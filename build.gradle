@@ -159,6 +159,8 @@ runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5'
 implementation 'org.apache.pdfbox:pdfbox:2.0.30'
 implementation 'org.apache.poi:poi-ooxml:5.2.5'
 implementation 'org.springframework.boot:spring-boot-starter-thymeleaf:3.2.2'
+testImplementation 'org.springframework.security:spring-security-test:6.2.1'
+implementation 'org.springframework.boot:spring-boot-starter-security:3.2.2' 
 
 
 }
