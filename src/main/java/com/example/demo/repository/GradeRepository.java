@@ -29,4 +29,6 @@ public interface GradeRepository extends JpaRepository<JGrade, UUID> {
     return findByExamSession_Exam_IdAndStudent_IdOrderByEntryDateDesc(examId, studentId).stream()
         .findFirst();
   }
+
+  boolean existsByExamSession_IdAndStudent_Id(UUID examSessionId, UUID studentId);
 }
