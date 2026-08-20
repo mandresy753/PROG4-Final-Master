@@ -52,6 +52,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/promotions/**")
                     .hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.GET, "/graduates/**")
+                    .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.GET, ADMIN_ONLY_RESOURCES)
                     .authenticated()
                     .requestMatchers(HttpMethod.POST, ADMIN_ONLY_RESOURCES)
