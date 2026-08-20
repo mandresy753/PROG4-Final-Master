@@ -19,7 +19,7 @@ class ExceptionTest {
     var ex = ResourceNotFoundException.of("User", UUID.randomUUID());
     assertEquals(404, ex.getStatus().value());
     assertTrue(ex.getMessage().contains("User"));
-    assertTrue(ex.getMessage().contains("introuvable"));
+    assertTrue(ex.getMessage().contains("Not found"));
   }
 
   @Test
