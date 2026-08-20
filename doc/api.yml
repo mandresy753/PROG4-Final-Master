@@ -1,0 +1,2069 @@
+openapi: 3.0.3
+info:
+  title: HEI Graduate Management System API
+  description: >
+    API REST pour la gestion des diplômés et de la vie académique de l'HEI.
+    Permet la gestion des utilisateurs, promotions, cours, inscriptions,
+    examens, notes, moyennes et relevés de notes.
+    Authentification JWT stateless avec trois rôles : ADMIN, TEACHER, STUDENT.
+  version: 1.0.0
+  contact:
+    name: HEI Development Team
+
+servers:
+  - url: http://localhost:8080
+    description: Serveur de développement
+
+tags:
+  - name: Auth
+    description: Authentification
+  - name: Users
+    description: Gestion des utilisateurs
+  - name: Academic Years
+    description: Gestion des années académiques
+  - name: Groups
+    description: Gestion des groupes
+  - name: Courses
+    description: Gestion des cours
+  - name: Course Offerings
+    description: Gestion des offres de cours
+  - name: Teacher Assignments
+    description: Gestion des affectations d'enseignants
+  - name: Enrollments
+    description: Gestion des inscriptions
+  - name: Exams
+    description: Gestion des examens
+  - name: Exam Sessions
+    description: Gestion des sessions d'examen
+  - name: Grades
+    description: Gestion des notes
+  - name: Averages
+    description: Calcul des moyennes
+  - name: Transcripts
+    description: Relevés de notes
+  - name: Graduates
+    description: Gestion des diplômés et export
+  - name: Health
+    description: Endpoints de santé et utilitaires
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        Token JWT obtenu via POST /auth/login.
+        Les rôles possibles sont : ADMIN, TEACHER, STUDENT.
+
+  parameters:
+    UserId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID de l'utilisateur
+
+    AcademicYearId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID de l'année académique
+
+    GroupId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID du groupe
+
+    CourseId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID du cours
+
+    CourseOfferingId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID de l'offre de cours
+
+    TeacherAssignmentId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID de l'affectation
+
+    EnrollmentId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID de l'inscription
+
+    ExamId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID de l'examen
+
+    ExamSessionId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID de la session d'examen
+
+    StudentIdPath:
+      name: studentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID de l'étudiant
+
+    StudentIdQuery:
+      name: studentId
+      in: query
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID de l'étudiant
+
+  responses:
+    BadRequest:
+      description: Requête invalide
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Non authentifié
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Accès interdit
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Ressource non trouvée
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Conflit de données
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: admin@hei.school
+        password:
+          type: string
+          format: password
+          example: secret123
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Token JWT
+          example: eyJhbGciOiJIUzI1NiJ9...
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        role:
+          type: string
+          enum: [ADMIN, TEACHER, STUDENT]
+          example: ADMIN
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        reference:
+          type: string
+          description: "Référence unique (ADM-xxx, TCH-xxx, STD-xxx)"
+          example: STD-001
+        lastName:
+          type: string
+          example: Doe
+        firstName:
+          type: string
+          example: John
+        email:
+          type: string
+          format: email
+          example: john.doe@hei.school
+        password:
+          type: string
+          format: password
+          description: Mot de passe en clair lors de la création/mise à jour
+        role:
+          type: string
+          enum: [ADMIN, TEACHER, STUDENT]
+
+    AcademicYear:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        label:
+          type: string
+          example: "2024-2025"
+        startDate:
+          type: string
+          format: date
+          example: "2024-09-01"
+        endDate:
+          type: string
+          format: date
+          example: "2025-06-30"
+
+    Group:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        reference:
+          type: string
+          example: G1-A
+        track:
+          type: string
+          enum: [TRONC_COMMUN, EL, TN]
+
+    Course:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ref:
+          type: string
+          example: MATH-101
+        title:
+          type: string
+          example: Mathématiques I
+        creditCount:
+          type: integer
+          example: 6
+        track:
+          type: string
+          enum: [TRONC_COMMUN, EL, TN]
+        semester:
+          type: string
+          enum: [S1, S2, S3, S4, S5, S6]
+
+    CourseOffering:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        course:
+          $ref: "#/components/schemas/Course"
+        academicYear:
+          $ref: "#/components/schemas/AcademicYear"
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/Group"
+
+    CreateCourseOfferingRequest:
+      type: object
+      required:
+        - courseId
+        - academicYearId
+        - groupIds
+      properties:
+        courseId:
+          type: string
+          format: uuid
+        academicYearId:
+          type: string
+          format: uuid
+        groupIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    Enrollment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        student:
+          $ref: "#/components/schemas/User"
+        group:
+          $ref: "#/components/schemas/Group"
+        academicYear:
+          $ref: "#/components/schemas/AcademicYear"
+        level:
+          type: string
+          enum: [L1, L2, L3]
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+
+    CreateEnrollmentRequest:
+      type: object
+      required:
+        - studentId
+        - groupId
+        - academicYearId
+        - level
+        - startDate
+      properties:
+        studentId:
+          type: string
+          format: uuid
+        groupId:
+          type: string
+          format: uuid
+        academicYearId:
+          type: string
+          format: uuid
+        level:
+          type: string
+          enum: [L1, L2, L3]
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+
+    Exam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        courseOffering:
+          $ref: "#/components/schemas/CourseOffering"
+        coefficient:
+          type: number
+          format: double
+          example: 1.5
+
+    CreateExamRequest:
+      type: object
+      required:
+        - courseOfferingId
+        - coefficient
+      properties:
+        courseOfferingId:
+          type: string
+          format: uuid
+        coefficient:
+          type: number
+          format: double
+
+    ExamSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        exam:
+          $ref: "#/components/schemas/Exam"
+        examDate:
+          type: string
+          format: date-time
+        teacher:
+          $ref: "#/components/schemas/User"
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/Group"
+
+    CreateExamSessionRequest:
+      type: object
+      required:
+        - examId
+        - examDate
+        - teacherId
+        - groupIds
+      properties:
+        examId:
+          type: string
+          format: uuid
+        examDate:
+          type: string
+          format: date-time
+        teacherId:
+          type: string
+          format: uuid
+        groupIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    Grade:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        examSession:
+          $ref: "#/components/schemas/ExamSession"
+        student:
+          $ref: "#/components/schemas/User"
+        value:
+          type: number
+          format: double
+          example: 15.5
+        entryDate:
+          type: string
+          format: date-time
+        enteredBy:
+          $ref: "#/components/schemas/User"
+        reason:
+          type: string
+          nullable: true
+          description: "Raison de la note (ex: rattrapage)"
+
+    RecordGradeRequest:
+      type: object
+      required:
+        - studentId
+        - value
+      properties:
+        studentId:
+          type: string
+          format: uuid
+        value:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 20
+        reason:
+          type: string
+          description: Raison de la note (optionnel)
+          example: "Examen final"
+
+    TeacherAssignment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        courseOffering:
+          $ref: "#/components/schemas/CourseOffering"
+        teacher:
+          $ref: "#/components/schemas/User"
+
+    AssignTeacherRequest:
+      type: object
+      required:
+        - courseOfferingId
+        - teacherId
+      properties:
+        courseOfferingId:
+          type: string
+          format: uuid
+        teacherId:
+          type: string
+          format: uuid
+
+    CourseAverage:
+      type: object
+      properties:
+        courseOffering:
+          $ref: "#/components/schemas/CourseOffering"
+        average:
+          type: number
+          format: double
+          nullable: true
+        complete:
+          type: boolean
+          description: true si toutes les notes sont saisies
+        gradedCoefficientSum:
+          type: number
+          format: double
+
+    YearAverage:
+      type: object
+      properties:
+        academicYear:
+          $ref: "#/components/schemas/AcademicYear"
+        courseAverages:
+          type: array
+          items:
+            $ref: "#/components/schemas/CourseAverage"
+        generalAverage:
+          type: number
+          format: double
+          nullable: true
+        totalCredits:
+          type: integer
+        validatedCredits:
+          type: integer
+        complete:
+          type: boolean
+
+    OverallAverage:
+      type: object
+      properties:
+        student:
+          $ref: "#/components/schemas/User"
+        years:
+          type: array
+          items:
+            $ref: "#/components/schemas/YearAverage"
+        overallAverage:
+          type: number
+          format: double
+          nullable: true
+        totalCredits:
+          type: integer
+        complete:
+          type: boolean
+
+    TranscriptCourseLine:
+      type: object
+      properties:
+        courseRef:
+          type: string
+        courseTitle:
+          type: string
+        creditCount:
+          type: integer
+        average:
+          type: number
+          format: double
+          nullable: true
+        validated:
+          type: boolean
+        status:
+          type: string
+          enum: [PROVISIONAL, COMPLETE]
+
+    YearTranscript:
+      type: object
+      properties:
+        student:
+          $ref: "#/components/schemas/User"
+        academicYear:
+          $ref: "#/components/schemas/AcademicYear"
+        courses:
+          type: array
+          items:
+            $ref: "#/components/schemas/TranscriptCourseLine"
+        generalAverage:
+          type: number
+          format: double
+          nullable: true
+        totalCredits:
+          type: integer
+        validatedCredits:
+          type: integer
+        status:
+          type: string
+          enum: [PROVISIONAL, COMPLETE]
+
+    FullTranscript:
+      type: object
+      properties:
+        student:
+          $ref: "#/components/schemas/User"
+        years:
+          type: array
+          items:
+            $ref: "#/components/schemas/YearTranscript"
+        overallAverage:
+          type: number
+          format: double
+          nullable: true
+        totalCredits:
+          type: integer
+        status:
+          type: string
+          enum: [PROVISIONAL, COMPLETE]
+
+    Graduate:
+      type: object
+      properties:
+        student:
+          $ref: "#/components/schemas/User"
+        track:
+          type: string
+          enum: [TRONC_COMMUN, EL, TN]
+        promotion:
+          type: string
+        overallAverage:
+          type: number
+          format: double
+        totalCredits:
+          type: integer
+        graduated:
+          type: boolean
+        rank:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+
+paths:
+  # ─── Health & Utility ────────────────────────────────────────────────
+  /ping:
+    get:
+      tags: [Health]
+      summary: Vérification de vivacité
+      operationId: ping
+      security: []
+      responses:
+        "200":
+          description: Le serveur est en vie
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: pong
+
+  /health/db:
+    get:
+      tags: [Health]
+      summary: Vérification de la connexion à la base de données
+      operationId: healthDb
+      security: []
+      responses:
+        "200":
+          description: Base de données accessible
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK
+        "500":
+          description: Base de données inaccessible
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: KO
+
+  /health/bucket:
+    get:
+      tags: [Health]
+      summary: Vérification du bucket S3
+      operationId: healthBucket
+      security: []
+      responses:
+        "200":
+          description: S3 accessible, retourne une URL pré-signée
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /health/email:
+    get:
+      tags: [Health]
+      summary: "Envoi de test d'emails (5 emails)"
+      operationId: healthEmail
+      security: []
+      parameters:
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: email
+          description: Adresse email de destination
+      responses:
+        "200":
+          description: Emails envoyés avec succès
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK
+
+  /health/event1:
+    get:
+      tags: [Health]
+      summary: Déclenchement d'événements de test
+      operationId: healthEvent1
+      security: []
+      parameters:
+        - name: nbEvent
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+            maximum: 500
+        - name: waitInSeconds
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 2
+      responses:
+        "200":
+          description: Liste des UUIDs d'événements déclenchés
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  /health/event/uuids:
+    post:
+      tags: [Health]
+      summary: Vérification de la persistance des événements
+      operationId: healthEventUuids
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        "200":
+          description: Tous les événements sont persistés
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK
+        "500":
+          description: Certains événements ne sont pas persistés
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: KO
+
+  # ─── Auth ────────────────────────────────────────────────────────────
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Authentification et obtention du token JWT
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Authentification réussie
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Identifiants invalides
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ─── Users ───────────────────────────────────────────────────────────
+  /users:
+    get:
+      tags: [Users]
+      summary: Liste tous les utilisateurs
+      operationId: listUsers
+      security:
+        - bearerAuth: [ADMIN]
+      parameters:
+        - name: role
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [ADMIN, TEACHER, STUDENT]
+          description: Filtrer par rôle
+      responses:
+        "200":
+          description: Liste des utilisateurs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Users]
+      summary: Crée un nouvel utilisateur
+      operationId: createUser
+      security:
+        - bearerAuth: [ADMIN]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+      responses:
+        "201":
+          description: Utilisateur créé
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Récupère un utilisateur par son ID
+      operationId: getUser
+      security:
+        - bearerAuth: [ADMIN]
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Utilisateur trouvé
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [Users]
+      summary: Met à jour un utilisateur
+      operationId: updateUser
+      security:
+        - bearerAuth: [ADMIN]
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+      responses:
+        "200":
+          description: Utilisateur mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Users]
+      summary: Supprime un utilisateur
+      operationId: deleteUser
+      security:
+        - bearerAuth: [ADMIN]
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Utilisateur supprimé
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ─── Academic Years ──────────────────────────────────────────────────
+  /academic-years:
+    get:
+      tags: [Academic Years]
+      summary: Liste toutes les années académiques
+      operationId: listAcademicYears
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Liste des années académiques
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AcademicYear"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Academic Years]
+      summary: Crée une année académique
+      operationId: createAcademicYear
+      security:
+        - bearerAuth: [ADMIN]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcademicYear"
+      responses:
+        "201":
+          description: Année académique créée
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicYear"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /academic-years/{id}:
+    get:
+      tags: [Academic Years]
+      summary: Récupère une année académique par son ID
+      operationId: getAcademicYear
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/AcademicYearId"
+      responses:
+        "200":
+          description: Année académique trouvée
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicYear"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [Academic Years]
+      summary: Met à jour une année académique
+      operationId: updateAcademicYear
+      security:
+        - bearerAuth: [ADMIN]
+      parameters:
+        - $ref: "#/components/parameters/AcademicYearId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcademicYear"
+      responses:
+        "200":
+          description: Année académique mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcademicYear"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Academic Years]
+      summary: Supprime une année académique
+      operationId: deleteAcademicYear
+      security:
+        - bearerAuth: [ADMIN]
+      parameters:
+        - $ref: "#/components/parameters/AcademicYearId"
+      responses:
+        "200":
+          description: Année académique supprimée
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ─── Groups ──────────────────────────────────────────────────────────
+  /groups:
+    get:
+      tags: [Groups]
+      summary: Liste tous les groupes
+      operationId: listGroups
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Liste des groupes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Group"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Groups]
+      summary: Crée un groupe
+      operationId: createGroup
+      security:
+        - bearerAuth: [ADMIN]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Group"
+      responses:
+        "201":
+          description: Groupe créé
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /groups/{id}:
+    get:
+      tags: [Groups]
+      summary: Récupère un groupe par son ID
+      operationId: getGroup
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      responses:
+        "200":
+          description: Groupe trouvé
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [Groups]
+      summary: Met à jour un groupe
+      operationId: updateGroup
+      security:
+        - bearerAuth: [ADMIN]
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Group"
+      responses:
+        "200":
+          description: Groupe mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Groups]
+      summary: Supprime un groupe
+      operationId: deleteGroup
+      security:
+        - bearerAuth: [ADMIN]
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      responses:
+        "200":
+          description: Groupe supprimé
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ─── Courses ─────────────────────────────────────────────────────────
+  /courses:
+    get:
+      tags: [Courses]
+      summary: Liste tous les cours
+      operationId: listCourses
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Liste des cours
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Course"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Courses]
+      summary: Crée un cours
+      operationId: createCourse
+      security:
+        - bearerAuth: [ADMIN]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Course"
+      responses:
+        "201":
+          description: Cours créé
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /courses/{id}:
+    get:
+      tags: [Courses]
+      summary: Récupère un cours par son ID
+      operationId: getCourse
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      responses:
+        "200":
+          description: Cours trouvé
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [Courses]
+      summary: Met à jour un cours
+      operationId: updateCourse
+      security:
+        - bearerAuth: [ADMIN]
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Course"
+      responses:
+        "200":
+          description: Cours mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Course"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Courses]
+      summary: Supprime un cours
+      operationId: deleteCourse
+      security:
+        - bearerAuth: [ADMIN]
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      responses:
+        "200":
+          description: Cours supprimé
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ─── Course Offerings ────────────────────────────────────────────────
+  /course-offerings:
+    get:
+      tags: [Course Offerings]
+      summary: Liste les offres de cours
+      operationId: listCourseOfferings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: academicYearId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer par année académique
+        - name: groupId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer par groupe
+      responses:
+        "200":
+          description: Liste des offres de cours
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CourseOffering"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Course Offerings]
+      summary: Crée une offre de cours
+      operationId: createCourseOffering
+      security:
+        - bearerAuth: [ADMIN]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCourseOfferingRequest"
+      responses:
+        "201":
+          description: Offre de cours créée
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseOffering"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /course-offerings/{id}:
+    get:
+      tags: [Course Offerings]
+      summary: Récupère une offre de cours par son ID
+      operationId: getCourseOffering
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseOfferingId"
+      responses:
+        "200":
+          description: Offre de cours trouvée
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseOffering"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Course Offerings]
+      summary: Supprime une offre de cours
+      operationId: deleteCourseOffering
+      security:
+        - bearerAuth: [ADMIN]
+      parameters:
+        - $ref: "#/components/parameters/CourseOfferingId"
+      responses:
+        "200":
+          description: Offre de cours supprimée
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ─── Teacher Assignments ─────────────────────────────────────────────
+  /teacher-assignments:
+    get:
+      tags: [Teacher Assignments]
+      summary: Liste les affectations d'enseignants
+      operationId: listTeacherAssignments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: teacherId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer par enseignant
+        - name: courseOfferingId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer par offre de cours
+      responses:
+        "200":
+          description: Liste des affectations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeacherAssignment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Teacher Assignments]
+      summary: Affecte un enseignant à une offre de cours
+      operationId: createTeacherAssignment
+      security:
+        - bearerAuth: [ADMIN]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignTeacherRequest"
+      responses:
+        "201":
+          description: Affectation créée
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeacherAssignment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /teacher-assignments/{id}:
+    delete:
+      tags: [Teacher Assignments]
+      summary: Supprime une affectation d'enseignant
+      operationId: deleteTeacherAssignment
+      security:
+        - bearerAuth: [ADMIN]
+      parameters:
+        - $ref: "#/components/parameters/TeacherAssignmentId"
+      responses:
+        "200":
+          description: Affectation supprimée
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ─── Enrollments ─────────────────────────────────────────────────────
+  /enrollments:
+    get:
+      tags: [Enrollments]
+      summary: Liste les inscriptions
+      operationId: listEnrollments
+      security:
+        - bearerAuth: []
+      description: >
+        Les étudiants ne voient que leurs propres inscriptions (doivent passer ?studentId=<own_id>).
+        Les ADMIN/TEACHER voient toutes les inscriptions.
+      parameters:
+        - name: studentId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer par étudiant
+        - name: groupId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer par groupe
+        - name: academicYearId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer par année académique
+      responses:
+        "200":
+          description: Liste des inscriptions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Enrollment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Enrollments]
+      summary: Inscrit un étudiant dans un groupe
+      operationId: createEnrollment
+      security:
+        - bearerAuth: [ADMIN]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEnrollmentRequest"
+      responses:
+        "201":
+          description: Inscription créée
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Enrollment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /enrollments/track:
+    get:
+      tags: [Enrollments]
+      summary: Récupère le track d'un étudiant
+      operationId: getEnrollmentTrack
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/StudentIdQuery"
+        - name: academicYearId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Année académique (sinon track courant)
+      responses:
+        "200":
+          description: Track de l'étudiant
+          content:
+            application/json:
+              schema:
+                type: string
+                enum: [TRONC_COMMUN, EL, TN]
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /enrollments/{id}:
+    delete:
+      tags: [Enrollments]
+      summary: Supprime une inscription
+      operationId: deleteEnrollment
+      security:
+        - bearerAuth: [ADMIN]
+      parameters:
+        - $ref: "#/components/parameters/EnrollmentId"
+      responses:
+        "200":
+          description: Inscription supprimée
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ─── Exams ───────────────────────────────────────────────────────────
+  /exams:
+    get:
+      tags: [Exams]
+      summary: Liste les examens d'une offre de cours
+      operationId: listExams
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: courseOfferingId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID de l'offre de cours
+      responses:
+        "200":
+          description: Liste des examens
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Exam"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Exams]
+      summary: Crée un examen
+      operationId: createExam
+      security:
+        - bearerAuth: [ADMIN]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExamRequest"
+      responses:
+        "201":
+          description: Examen créé
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Exam"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /exams/{id}:
+    get:
+      tags: [Exams]
+      summary: Récupère un examen par son ID
+      operationId: getExam
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ExamId"
+      responses:
+        "200":
+          description: Examen trouvé
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Exam"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Exams]
+      summary: Supprime un examen
+      operationId: deleteExam
+      security:
+        - bearerAuth: [ADMIN]
+      parameters:
+        - $ref: "#/components/parameters/ExamId"
+      responses:
+        "200":
+          description: Examen supprimé
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ─── Exam Sessions ───────────────────────────────────────────────────
+  /exam-sessions:
+    get:
+      tags: [Exam Sessions]
+      summary: Liste les sessions d'un examen
+      operationId: listExamSessions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: examId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID de l'examen
+      responses:
+        "200":
+          description: Liste des sessions d'examen
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExamSession"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Exam Sessions]
+      summary: Crée une session d'examen
+      operationId: createExamSession
+      security:
+        - bearerAuth: [ADMIN]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExamSessionRequest"
+      responses:
+        "201":
+          description: Session d'examen créée
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamSession"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /exam-sessions/{id}:
+    delete:
+      tags: [Exam Sessions]
+      summary: Supprime une session d'examen
+      operationId: deleteExamSession
+      security:
+        - bearerAuth: [ADMIN]
+      parameters:
+        - $ref: "#/components/parameters/ExamSessionId"
+      responses:
+        "200":
+          description: Session d'examen supprimée
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ─── Grades ──────────────────────────────────────────────────────────
+  /grades/current:
+    get:
+      tags: [Grades]
+      summary: Récupère les notes courantes d'un étudiant
+      operationId: getCurrentGrades
+      security:
+        - bearerAuth: []
+      description: >
+        ADMIN : toutes les notes.
+        STUDENT : seulement ses propres notes (doit passer ?studentId=<own_id>).
+        TEACHER : seulement pour les offres de cours auxquelles il est affecté.
+      parameters:
+        - $ref: "#/components/parameters/StudentIdQuery"
+      responses:
+        "200":
+          description: Notes courantes de l'étudiant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Grade"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /grades/history:
+    get:
+      tags: [Grades]
+      summary: Récupère l'historique des notes d'un étudiant pour une session
+      operationId: getGradeHistory
+      security:
+        - bearerAuth: []
+      description: >
+        ADMIN : toutes les notes.
+        STUDENT : seulement ses propres notes.
+        TEACHER : seulement pour les offres de cours auxquelles il est affecté.
+      parameters:
+        - name: examSessionId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID de la session d'examen
+        - $ref: "#/components/parameters/StudentIdQuery"
+      responses:
+        "200":
+          description: Historique des notes (ordonné par entry_date DESC)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Grade"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /grades/{examSessionId}:
+    post:
+      tags: [Grades]
+      summary: Enregistre une note pour une session d'examen
+      operationId: recordGrade
+      security:
+        - bearerAuth: [ADMIN, TEACHER]
+      description: >
+        ADMIN : peut toujours enregistrer une note.
+        TEACHER : seulement si affecté à l'offre de cours liée à la session d'examen.
+        L'utilisateur authentifié est automatiquement défini comme enteredBy.
+      parameters:
+        - $ref: "#/components/parameters/ExamSessionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordGradeRequest"
+      responses:
+        "201":
+          description: Note enregistrée
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Grade"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ─── Averages ────────────────────────────────────────────────────────
+  /averages/course:
+    get:
+      tags: [Averages]
+      summary: Calcule la moyenne d'un étudiant pour une offre de cours
+      operationId: getCourseAverage
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/StudentIdQuery"
+        - name: courseOfferingId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID de l'offre de cours
+      responses:
+        "200":
+          description: Moyenne par cours
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseAverage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /averages/year:
+    get:
+      tags: [Averages]
+      summary: Calcule les moyennes annuelles d'un étudiant
+      operationId: getYearAverage
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/StudentIdQuery"
+        - name: academicYearId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID de l'année académique
+      responses:
+        "200":
+          description: Moyennes de l'année
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YearAverage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /averages/overall:
+    get:
+      tags: [Averages]
+      summary: Calcule la moyenne générale globale d'un étudiant
+      operationId: getOverallAverage
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/StudentIdQuery"
+      responses:
+        "200":
+          description: Moyenne générale
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OverallAverage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ─── Transcripts ─────────────────────────────────────────────────────
+  /transcripts/year:
+    get:
+      tags: [Transcripts]
+      summary: Génère le relevé de notes d'un étudiant pour une année
+      operationId: getYearTranscript
+      security:
+        - bearerAuth: []
+      description: >
+        ADMIN ou STUDENT (propres données uniquement via ?studentId=<own_id>).
+      parameters:
+        - $ref: "#/components/parameters/StudentIdQuery"
+        - name: academicYearId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID de l'année académique
+      responses:
+        "200":
+          description: Relevé de notes annuel
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YearTranscript"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /transcripts/full:
+    get:
+      tags: [Transcripts]
+      summary: Génère le relevé de notes complet d'un étudiant
+      operationId: getFullTranscript
+      security:
+        - bearerAuth: []
+      description: >
+        ADMIN ou STUDENT (propres données uniquement via ?studentId=<own_id>).
+      parameters:
+        - $ref: "#/components/parameters/StudentIdQuery"
+      responses:
+        "200":
+          description: Relevé de notes complet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FullTranscript"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /transcripts/{studentId}/send-email:
+    post:
+      tags: [Transcripts]
+      summary: Envoie le relevé de notes par email (async via SQS/EventBridge)
+      operationId: sendTranscriptEmail
+      security:
+        - bearerAuth: []
+      description: >
+        ADMIN ou STUDENT (propres données uniquement).
+        Déclenche un événement asynchrone qui génère un PDF et l'envoie par email.
+      parameters:
+        - $ref: "#/components/parameters/StudentIdPath"
+      responses:
+        "202":
+          description: Demande d'envoi acceptée (traitement asynchrone)
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ─── Graduates ───────────────────────────────────────────────────────
+  /graduates:
+    get:
+      tags: [Graduates]
+      summary: Liste les diplômés d'un track et d'une promotion
+      operationId: listGraduates
+      security:
+        - bearerAuth: [ADMIN]
+      parameters:
+        - name: track
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [TRONC_COMMUN, EL, TN]
+          description: Track à filtrer
+        - name: promotion
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Promotion (label de l'année académique)
+      responses:
+        "200":
+          description: Liste des diplômés avec classement
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Graduate"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /graduates/export:
+    get:
+      tags: [Graduates]
+      summary: Exporte les diplômés d'une promotion en XLSX (via S3 presigned URL)
+      operationId: exportGraduates
+      security:
+        - bearerAuth: [ADMIN]
+      parameters:
+        - name: promotion
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Promotion (label de l'année académique)
+      responses:
+        "200":
+          description: URL pré-signée S3 du fichier XLSX généré
+          content:
+            text/plain:
+              schema:
+                type: string
+                format: uri
+                description: URL pré-signée S3
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
