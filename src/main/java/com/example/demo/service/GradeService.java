@@ -72,6 +72,13 @@ public class GradeService {
       throw new BadRequestException("The grade must be between 0 and 20");
     }
 
+    var isCorrection =
+        gradeRepository.existsByExamSession_IdAndStudent_Id(examSessionId, studentId);
+
+    if (isCorrection && (reason == null || reason.isBlank())) {
+      throw new BadRequestException("A reason is required when correcting an existing grade");
+    }
+
     var entity =
         JGrade.builder()
             .examSession(examSessionRepository.getReferenceById(examSessionId))
