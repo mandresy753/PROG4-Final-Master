@@ -39,6 +39,11 @@ public class AuthController {
             .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));
 
     var token = jwtService.generateToken(AppUserPrincipal.of(user));
-    return new LoginResponse(token, user.getFirstName(), user.getLastName(), user.getRole().name());
+    return new LoginResponse(
+        token,
+        user.getId().toString(),
+        user.getFirstName(),
+        user.getLastName(),
+        user.getRole().name());
   }
 }

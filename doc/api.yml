@@ -211,6 +211,11 @@ components:
           type: string
           description: Token JWT
           example: eyJhbGciOiJIUzI1NiJ9...
+        userId:
+          type: string
+          format: uuid
+          description: UUID de l'utilisateur connecté
+          example: 550e8400-e29b-41d4-a716-446655440000
         firstName:
           type: string
           example: John
